@@ -118,7 +118,8 @@
         "supportsHttpsTrafficOnly": true,
         "minimumTlsVersion": "TLS1_2",
         "allowBlobPublicAccess": false,
-        "networkAcls": "[if(parameters('deployNetworking'), createObject('bypass', 'AzureServices', 'defaultAction', 'Deny', 'virtualNetworkRules', createArray(createObject('id', format('{0}/subnets/snet-functions', resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))), 'ignoreMissingVnetServiceEndpoint', false))), createObject('defaultAction', 'Allow', 'bypass', 'AzureServices'))]"
+        "networkAcls": "[if(parameters('deployNetworking'), json(concat('{\"bypass\": \"AzureServices\", \"defaultAction\": \"Deny\", \"virtualNetworkRules\": [{\"id\": \"', format('{0}/subnets/snet-functions', resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))), '\", \"ignoreMissingVnetServiceEndpoint\": false}]}')), json('{\"defaultAction\": \"Allow\", \"bypass\": \"AzureServices\"}'))]"
+
 
       }
     },
@@ -296,7 +297,8 @@
         "enableSoftDelete": true,
         "softDeleteRetentionInDays": 90,
         "enablePurgeProtection": true,
-        "networkAcls": "[if(parameters('deployNetworking'), createObject('bypass', 'AzureServices', 'defaultAction', 'Deny', 'virtualNetworkRules', createArray(createObject('id', format('{0}/subnets/snet-functions', resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))), 'ignoreMissingVnetServiceEndpoint', false))), createObject('defaultAction', 'Allow', 'bypass', 'AzureServices'))]"
+        "networkAcls": "[if(parameters('deployNetworking'), json(concat('{\"bypass\": \"AzureServices\", \"defaultAction\": \"Deny\", \"virtualNetworkRules\": [{\"id\": \"', format('{0}/subnets/snet-functions', resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))), '\", \"ignoreMissingVnetServiceEndpoint\": false}]}')), json('{\"defaultAction\": \"Allow\", \"bypass\": \"AzureServices\"}'))]"
+
 
       },
       "dependsOn": [
