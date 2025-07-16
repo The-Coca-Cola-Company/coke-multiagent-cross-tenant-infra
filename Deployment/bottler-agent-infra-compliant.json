@@ -99,7 +99,7 @@
     "resourcePrefix": "[format('{0}-{1}', variables('baseName'), parameters('environment'))]",
     "functionAppName": "[format('{0}-func-{1}', variables('resourcePrefix'), variables('uniqueSuffix'))]",
     "storageAccountName": "[toLower(format('st{0}{1}{2}', replace(variables('baseName'), '-', ''), parameters('environment'), variables('uniqueSuffix')))]",
-    "keyVaultName": "[format('{0}-kv-{1}', variables('resourcePrefix'), variables('uniqueSuffix'))]",
+    "keyVaultName": "[format('kv{0}{1}{2}', replace(variables('baseName'), '-', ''), parameters('environment'), variables('uniqueSuffix'))]",
     "vnetName": "[format('{0}-vnet-{1}', variables('resourcePrefix'), variables('uniqueSuffix'))]",
     "nsgPrefix": "[format('{0}-nsg', variables('resourcePrefix'))]",
     "corsOriginsArray": "[split(parameters('corsAllowedOrigins'), ',')]"
