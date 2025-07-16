@@ -264,10 +264,7 @@
       "apiVersion": "2023-01-01",
       "name": "[format('{0}-asp-{1}', variables('resourcePrefix'), variables('uniqueSuffix'))]",
       "location": "[parameters('location')]",
-      "sku": {
-        "name": "Y1",
-        "tier": "Dynamic"
-      },
+      "sku": "[if(parameters('deployNetworking'), createObject('name', 'EP1', 'tier', 'ElasticPremium'), createObject('name', 'Y1', 'tier', 'Dynamic'))]",
       "properties": {
         "reserved": true
       }
