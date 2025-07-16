@@ -1,4 +1,4 @@
-# 🍾 Bottler Agent - Azure Deployment Guide
+# 🏭 Bottler Agent - Azure Deployment Guide
 
 ![Cross Tenant Architecture](Deployment/img/Image%20cross.png)
 
