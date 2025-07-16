@@ -1,0 +1,287 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "\ud83d\ude80 Bottler Agent Main Deployment - Function App (Step 2/2)",
+    "_generator": {
+      "name": "bicep",
+      "version": "0.20.4.51522",
+      "templateHash": "12345678901234567890"
+    }
+  },
+  "parameters": {
+    "environment": {
+      "type": "string",
+      "defaultValue": "dev",
+      "allowedValues": [
+        "dev",
+        "test",
+        "prod"
+      ],
+      "metadata": {
+        "description": "Environment name (dev, test, or prod)"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Azure region for all resources"
+      }
+    },
+    "deployAIFoundry": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Deploy Azure AI Foundry for advanced analytics"
+      }
+    },
+    "deployCosmosDB": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Deploy Cosmos DB for agent state management"
+      }
+    },
+    "tcccTenantId": {
+      "type": "string",
+      "metadata": {
+        "description": "TCCC Tenant ID for cross-tenant authentication (required - obtain from TCCC team)"
+      }
+    },
+    "tcccAppId": {
+      "type": "string",
+      "metadata": {
+        "description": "TCCC App Registration ID for authentication (required - obtain from TCCC team)"
+      }
+    },
+    "tcccHubUrl": {
+      "type": "string",
+      "metadata": {
+        "description": "TCCC Hub Function App URL (e.g., https://tccc-hub-func.azurewebsites.net)"
+      }
+    },
+    "corsAllowedOrigins": {
+      "type": "string",
+      "defaultValue": "https://portal.azure.com,https://ms.portal.azure.com",
+      "metadata": {
+        "description": "Comma-separated list of allowed CORS origins"
+      }
+    },
+    "deployNetworking": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Deploy VNET and networking components for enhanced security"
+      }
+    },
+    "vnetAddressPrefix": {
+      "type": "string",
+      "defaultValue": "10.2.0.0/16",
+      "metadata": {
+        "description": "Bottler VNET address space (must not overlap with TCCC VNET)"
+      }
+    },
+    "tcccVnetResourceId": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "TCCC VNET Resource ID for cross-tenant peering (optional)"
+      }
+    },
+    "enableCrossTenantPeering": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable VNET peering to TCCC tenant for secure communication"
+      }
+    },
+    "preDeployedStorageAccountName": {
+      "type": "string",
+      "metadata": {
+        "description": "Storage account name from Step 1 deployment"
+      }
+    },
+    "preDeployedKeyVaultName": {
+      "type": "string",
+      "metadata": {
+        "description": "Key Vault name from Step 1 deployment"
+      }
+    },
+    "preDeployedAppServicePlanName": {
+      "type": "string",
+      "metadata": {
+        "description": "App Service Plan name from Step 1 deployment"
+      }
+    },
+    "preDeployedVnetName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "VNET name from Step 1 deployment (if networking enabled)"
+      }
+    }
+  },
+  "variables": {
+    "uniqueSuffix": "[substring(uniqueString(resourceGroup().id), 0, 6)]",
+    "keyVaultSuffix": "[substring(uniqueString(resourceGroup().id, deployment().name), 0, 6)]",
+    "baseName": "bottler-agent",
+    "resourcePrefix": "[format('{0}-{1}', variables('baseName'), parameters('environment'))]",
+    "functionAppName": "[format('{0}-func-{1}', variables('resourcePrefix'), variables('uniqueSuffix'))]",
+    "storageAccountName": "[parameters('preDeployedStorageAccountName')]",
+    "keyVaultName": "[parameters('preDeployedKeyVaultName')]",
+    "vnetName": "[parameters('preDeployedVnetName')]",
+    "nsgPrefix": "[format('{0}-nsg', variables('resourcePrefix'))]",
+    "corsOriginsArray": "[split(parameters('corsAllowedOrigins'), ',')]",
+    "appServicePlanName": "[parameters('preDeployedAppServicePlanName')]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2023-01-01",
+      "name": "[variables('functionAppName')]",
+      "location": "[parameters('location')]",
+      "kind": "functionapp",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
+        "virtualNetworkSubnetId": "[if(parameters('deployNetworking'), format('{0}/subnets/snet-functions', resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))), null())]",
+        "httpsOnly": true,
+        "siteConfig": {
+          "vnetRouteAllEnabled": "[parameters('deployNetworking')]",
+          "functionsRuntimeScaleMonitoringEnabled": true,
+          "minTlsVersion": "1.2",
+          "ftpsState": "Disabled",
+          "appSettings": [
+            {
+              "name": "AzureWebJobsStorage__accountName",
+              "value": "[variables('storageAccountName')]"
+            },
+            {
+              "name": "AzureWebJobsStorage__credential",
+              "value": "managedidentity"
+            },
+            {
+              "name": "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING",
+              "value": "[format('@Microsoft.KeyVault(SecretUri={0}secrets/storage-connection-string/)', reference(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName')), '2023-07-01').vaultUri)]"
+            },
+            {
+              "name": "WEBSITE_CONTENTSHARE",
+              "value": "[toLower(variables('functionAppName'))]"
+            },
+            {
+              "name": "FUNCTIONS_EXTENSION_VERSION",
+              "value": "~4"
+            },
+            {
+              "name": "FUNCTIONS_WORKER_RUNTIME",
+              "value": "python"
+            },
+            {
+              "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+              "value": "[format('@Microsoft.KeyVault(SecretUri={0}secrets/appinsights-connection-string/)', reference(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName')), '2023-07-01').vaultUri)]"
+            },
+            {
+              "name": "KEY_VAULT_URI",
+              "value": "[reference(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName')), '2023-07-01').vaultUri]"
+            },
+            {
+              "name": "AGENT_TYPE",
+              "value": "BOTTLER_AGENT"
+            },
+            {
+              "name": "TCCC_TENANT_ID",
+              "value": "[parameters('tcccTenantId')]"
+            },
+            {
+              "name": "TCCC_APP_ID",
+              "value": "[parameters('tcccAppId')]"
+            },
+            {
+              "name": "TCCC_HUB_URL",
+              "value": "[parameters('tcccHubUrl')]"
+            },
+            {
+              "name": "CORS_ALLOWED_ORIGINS",
+              "value": "[parameters('corsAllowedOrigins')]"
+            },
+            {
+              "name": "COSMOS_DB_ENDPOINT",
+              "value": "[if(parameters('deployCosmosDB'), format('@Microsoft.KeyVault(SecretUri={0}secrets/cosmos-endpoint/)', reference(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName')), '2023-07-01').vaultUri), '')]"
+            },
+            {
+              "name": "COSMOS_DB_KEY",
+              "value": "[if(parameters('deployCosmosDB'), format('@Microsoft.KeyVault(SecretUri={0}secrets/cosmos-key/)', reference(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName')), '2023-07-01').vaultUri), '')]"
+            }
+          ],
+          "pythonVersion": "3.11",
+          "cors": {
+            "allowedOrigins": "[variables('corsOriginsArray')]",
+            "supportCredentials": true
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/components', format('{0}-ai-{1}', variables('resourcePrefix'), variables('uniqueSuffix')))]",
+        "[resourceId('Microsoft.Web/serverfarms', format('{0}-asp-{1}', variables('resourcePrefix'), variables('uniqueSuffix')))]",
+        "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "name": "[guid(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), variables('functionAppName'), 'StorageBlobDataOwner')]",
+      "scope": "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b7e6dc6d-f1e8-4753-8033-0f276bb0955b')]",
+        "principalId": "[reference(resourceId('Microsoft.Web/sites', variables('functionAppName')), '2023-01-01', 'full').identity.principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', variables('functionAppName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "name": "[guid(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName')), variables('functionAppName'), 'KeyVaultSecretsUser')]",
+      "scope": "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')]",
+        "principalId": "[reference(resourceId('Microsoft.Web/sites', variables('functionAppName')), '2023-01-01', 'full').identity.principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', variables('functionAppName'))]",
+        "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]"
+      ]
+    }
+  ],
+  "outputs": {
+    "functionAppName": {
+      "type": "string",
+      "value": "[variables('functionAppName')]"
+    },
+    "functionAppUrl": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Web/sites', variables('functionAppName')), '2023-01-01').defaultHostName]"
+    },
+    "functionAppIdentityPrincipalId": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Web/sites', variables('functionAppName')), '2023-01-01', 'full').identity.principalId]"
+    },
+    "functionAppIdentityTenantId": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Web/sites', variables('functionAppName')), '2023-01-01', 'full').identity.tenantId]"
+    },
+    "deploymentComplete": {
+      "type": "string",
+      "value": "SUCCESS\\! Your Bottler Agent is now deployed and ready for function code deployment."
+    }
+  }
+}
