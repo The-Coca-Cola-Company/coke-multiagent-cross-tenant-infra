@@ -92,12 +92,6 @@
       "metadata": {
         "description": "VNET name from Step 1 deployment (if networking enabled)"
       }
-    },
-    "preDeployedAppInsightsName": {
-      "type": "string",
-      "metadata": {
-        "description": "Application Insights name from Step 1 deployment"
-      }
     }
   },
   "variables": {
@@ -109,7 +103,6 @@
     "keyVaultName": "[parameters('preDeployedKeyVaultName')]",
     "appServicePlanName": "[parameters('preDeployedAppServicePlanName')]",
     "vnetName": "[parameters('preDeployedVnetName')]",
-    "appInsightsName": "[parameters('preDeployedAppInsightsName')]",
     "corsOriginsArray": "[split(parameters('corsAllowedOrigins'), ',')]"
   },
   "resources": [
