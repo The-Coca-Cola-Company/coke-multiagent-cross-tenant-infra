@@ -138,10 +138,6 @@
               "value": "[toLower(variables('functionAppName'))]"
             },
             {
-              "name": "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING",
-              "value": "[format('@Microsoft.KeyVault(SecretUri={0}secrets/storage-connection-string/)', reference(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName')), '2023-07-01').vaultUri)]"
-            },
-            {
               "name": "FUNCTIONS_EXTENSION_VERSION",
               "value": "~4"
             },
@@ -172,18 +168,6 @@
             {
               "name": "CORS_ALLOWED_ORIGINS",
               "value": "[parameters('corsAllowedOrigins')]"
-            },
-            {
-              "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
-              "value": "[format('@Microsoft.KeyVault(SecretUri={0}secrets/appinsights-connection-string/)', reference(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName')), '2023-07-01').vaultUri)]"
-            },
-            {
-              "name": "COSMOS_DB_ENDPOINT",
-              "value": "[if(parameters('deployCosmosDB'), format('@Microsoft.KeyVault(SecretUri={0}secrets/cosmos-endpoint/)', reference(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName')), '2023-07-01').vaultUri), '')]"
-            },
-            {
-              "name": "COSMOS_DB_KEY",
-              "value": "[if(parameters('deployCosmosDB'), format('@Microsoft.KeyVault(SecretUri={0}secrets/cosmos-key/)', reference(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName')), '2023-07-01').vaultUri), '')]"
             }
           ],
           "pythonVersion": "3.11",
@@ -218,6 +202,20 @@
         "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')]",
         "principalId": "[reference(resourceId('Microsoft.Web/sites', variables('functionAppName')), '2023-01-01', 'full').identity.principalId]",
         "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', variables('functionAppName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Web/sites/config",
+      "apiVersion": "2023-01-01",
+      "name": "[format('{0}/appsettings', variables('functionAppName'))]",
+      "properties": {
+        "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING": "[format('@Microsoft.KeyVault(SecretUri={0}secrets/storage-connection-string/)', reference(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName')), '2023-07-01').vaultUri)]",
+        "APPLICATIONINSIGHTS_CONNECTION_STRING": "[format('@Microsoft.KeyVault(SecretUri={0}secrets/appinsights-connection-string/)', reference(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName')), '2023-07-01').vaultUri)]",
+        "COSMOS_DB_ENDPOINT": "[if(parameters('deployCosmosDB'), format('@Microsoft.KeyVault(SecretUri={0}secrets/cosmos-endpoint/)', reference(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName')), '2023-07-01').vaultUri), '')]",
+        "COSMOS_DB_KEY": "[if(parameters('deployCosmosDB'), format('@Microsoft.KeyVault(SecretUri={0}secrets/cosmos-key/)', reference(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName')), '2023-07-01').vaultUri), '')]"
       },
       "dependsOn": [
         "[resourceId('Microsoft.Web/sites', variables('functionAppName'))]"
