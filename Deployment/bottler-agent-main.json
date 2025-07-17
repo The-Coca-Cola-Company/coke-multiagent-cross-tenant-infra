@@ -212,6 +212,34 @@
       ]
     },
     {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "name": "[guid(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), variables('functionAppName'), 'StorageFileDataSMBShareContributor', uniqueString(resourceGroup().id))]",
+      "scope": "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '0c867c2a-1d8c-454a-a3db-ab2ea1bdc8bb')]",
+        "principalId": "[reference(resourceId('Microsoft.Web/sites', variables('functionAppName')), '2023-01-01', 'full').identity.principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', variables('functionAppName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "name": "[guid(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), variables('functionAppName'), 'StorageFileDataSMBShareContributor', uniqueString(resourceGroup().id))]",
+      "scope": "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '0c867c2a-1d8c-454a-a3db-ab2ea1bdc8bb')]",
+        "principalId": "[reference(resourceId('Microsoft.Web/sites', variables('functionAppName')), '2023-01-01', 'full').identity.principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', variables('functionAppName'))]"
+      ]
+    },
+    {
       "type": "Microsoft.Web/sites/config",
       "apiVersion": "2023-01-01",
       "name": "[format('{0}/appsettings', variables('functionAppName'))]",
@@ -243,6 +271,13 @@
       "value": "[guid(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), variables('functionAppName'), 'StorageBlobDataOwner', uniqueString(resourceGroup().id))]",
       "metadata": {
         "description": "GUID of the Storage Blob Data Owner role assignment for the Function App"
+      }
+    },
+    "storageFileRoleAssignmentGuid": {
+      "type": "string",
+      "value": "[guid(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), variables('functionAppName'), 'StorageFileDataSMBShareContributor', uniqueString(resourceGroup().id))]",
+      "metadata": {
+        "description": "GUID of the Storage File Data SMB Share Contributor role assignment for the Function App"
       }
     },
     "keyVaultRoleAssignmentGuid": {
