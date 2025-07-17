@@ -223,9 +223,7 @@
         "COSMOS_DB_KEY": "[if(parameters('deployCosmosDB'), format('@Microsoft.KeyVault(SecretUri={0}secrets/cosmos-key/)', reference(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName')), '2023-07-01').vaultUri), '')]"
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Web/sites', variables('functionAppName'))]",
-        "[resourceId('Microsoft.Authorization/roleAssignments', guid(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName')), variables('functionAppName'), 'KeyVaultSecretsUser', uniqueString(resourceGroup().id)))]",
-        "[resourceId('Microsoft.Authorization/roleAssignments', guid(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), variables('functionAppName'), 'StorageAccountContributor', uniqueString(resourceGroup().id)))]"
+        "[resourceId('Microsoft.Web/sites', variables('functionAppName'))]"
       ]
     }
   ],
