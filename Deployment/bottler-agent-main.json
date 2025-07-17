@@ -2,7 +2,7 @@
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "metadata": {
-    "description": "\ud83d\ude80 Step 2/2: Deploy Function App (references Step 1 infrastructure)",
+    "description": "🚀 Step 2/2: Deploy Function App (references Step 1 infrastructure)",
     "_generator": {
       "name": "bicep",
       "version": "0.20.4.51522",
@@ -92,6 +92,12 @@
       "metadata": {
         "description": "VNET name from Step 1 deployment (if networking enabled)"
       }
+    },
+    "preDeployedAppInsightsName": {
+      "type": "string",
+      "metadata": {
+        "description": "Application Insights name from Step 1 deployment"
+      }
     }
   },
   "variables": {
@@ -103,6 +109,7 @@
     "keyVaultName": "[parameters('preDeployedKeyVaultName')]",
     "appServicePlanName": "[parameters('preDeployedAppServicePlanName')]",
     "vnetName": "[parameters('preDeployedVnetName')]",
+    "appInsightsName": "[parameters('preDeployedAppInsightsName')]",
     "corsOriginsArray": "[split(parameters('corsAllowedOrigins'), ',')]"
   },
   "resources": [
@@ -193,13 +200,7 @@
           }
         }
       },
-      "dependsOn": [
-        "[resourceId('Microsoft.Insights/components', format('{0}-ai-{1}', variables('resourcePrefix'), variables('uniqueSuffix')))]",
-        "[resourceId('Microsoft.Web/serverfarms', format('{0}-asp-{1}', variables('resourcePrefix'), variables('uniqueSuffix')))]",
-        "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
-        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
-        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
-      ]
+      "dependsOn": []
     },
     {
       "type": "Microsoft.Authorization/roleAssignments",
@@ -212,8 +213,7 @@
         "principalType": "ServicePrincipal"
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Web/sites', variables('functionAppName'))]",
-        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+        "[resourceId('Microsoft.Web/sites', variables('functionAppName'))]"
       ]
     },
     {
@@ -227,8 +227,7 @@
         "principalType": "ServicePrincipal"
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Web/sites', variables('functionAppName'))]",
-        "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]"
+        "[resourceId('Microsoft.Web/sites', variables('functionAppName'))]"
       ]
     }
   ],
