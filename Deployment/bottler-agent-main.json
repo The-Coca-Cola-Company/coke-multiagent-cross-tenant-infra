@@ -212,6 +212,7 @@
       "apiVersion": "2023-01-01",
       "name": "[format('{0}/appsettings', variables('functionAppName'))]",
       "properties": {
+        "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING": "[format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};EndpointSuffix={2}', variables('storageAccountName'), listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2023-01-01').keys[0].value, environment().suffixes.storage)]",
         "AzureWebJobsStorage__accountName": "[variables('storageAccountName')]",
         "AzureWebJobsStorage__credential": "managedidentity",
         "APPLICATIONINSIGHTS_CONNECTION_STRING": "[format('@Microsoft.KeyVault(SecretUri={0}secrets/appinsights-connection-string/)', reference(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName')), '2023-07-01').vaultUri)]",
