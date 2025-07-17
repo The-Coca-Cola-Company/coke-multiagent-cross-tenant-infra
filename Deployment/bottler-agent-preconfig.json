@@ -369,6 +369,10 @@
       "type": "string",
       "value": "[if(parameters('deployNetworking'), variables('vnetName'), '')]"
     },
+    "appInsightsName": {
+      "type": "string",
+      "value": "[format('{0}-ai-{1}', variables('resourcePrefix'), variables('uniqueSuffix'))]"
+    },
     "readyForStep2": {
       "type": "string",
       "value": "Step 1 Complete! All secrets created. Wait 60-90 seconds then deploy Step 2."
