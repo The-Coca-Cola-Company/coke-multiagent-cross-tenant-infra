@@ -168,6 +168,10 @@
             {
               "name": "CORS_ALLOWED_ORIGINS",
               "value": "[parameters('corsAllowedOrigins')]"
+            },
+            {
+              "name": "WEBSITE_CONTENTOVERVNET",
+              "value": "1"
             }
           ],
           "pythonVersion": "3.11",
