@@ -190,9 +190,7 @@
         "COSMOS_DB_KEY": "[if(parameters('deployCosmosDB'), format('@Microsoft.KeyVault(SecretUri={0}secrets/cosmos-key/)', reference(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName')), '2023-07-01').vaultUri), '')]"
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Web/sites', variables('functionAppName'))]",
-        "[resourceId('Microsoft.Authorization/roleAssignments', guid(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), variables('functionAppName'), 'StorageBlobDataOwner', uniqueString(resourceGroup().id)))]",
-        "[resourceId('Microsoft.Authorization/roleAssignments', guid(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName')), variables('functionAppName'), 'KeyVaultSecretsUser', uniqueString(resourceGroup().id)))]"
+        "[resourceId('Microsoft.Web/sites', variables('functionAppName'))]"
       ]
     },
     {
@@ -237,9 +235,23 @@
       "type": "string",
       "value": "[reference(resourceId('Microsoft.Web/sites', variables('functionAppName')), '2023-01-01', 'full').identity.principalId]"
     },
+    "storageRoleAssignmentGuid": {
+      "type": "string",
+      "value": "[guid(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), variables('functionAppName'), 'StorageBlobDataOwner', uniqueString(resourceGroup().id))]",
+      "metadata": {
+        "description": "GUID of the Storage Blob Data Owner role assignment for the Function App"
+      }
+    },
+    "keyVaultRoleAssignmentGuid": {
+      "type": "string",
+      "value": "[guid(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName')), variables('functionAppName'), 'KeyVaultSecretsUser', uniqueString(resourceGroup().id))]",
+      "metadata": {
+        "description": "GUID of the Key Vault Secrets User role assignment for the Function App"
+      }
+    },
     "deploymentComplete": {
       "type": "string",
-      "value": "SUCCESS\\! Bottler Agent is deployed and ready for function code."
+      "value": "SUCCESS! Bottler Agent is deployed and ready for function code."
     }
   }
 }
