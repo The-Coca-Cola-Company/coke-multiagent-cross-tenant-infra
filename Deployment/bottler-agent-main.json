@@ -2,7 +2,7 @@
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "metadata": {
-    "description": "\ud83d\ude80 Bottler Agent Main Deployment - Function App (Step 2/2)",
+    "description": "\ud83d\ude80 Step 2/2: Deploy Function App (references Step 1 infrastructure)",
     "_generator": {
       "name": "bicep",
       "version": "0.20.4.51522",
@@ -29,11 +29,11 @@
         "description": "Azure region for all resources"
       }
     },
-    "deployAIFoundry": {
+    "deployNetworking": {
       "type": "bool",
       "defaultValue": true,
       "metadata": {
-        "description": "Deploy Azure AI Foundry for advanced analytics"
+        "description": "Deploy VNET and networking components for enhanced security"
       }
     },
     "deployCosmosDB": {
@@ -68,34 +68,6 @@
         "description": "Comma-separated list of allowed CORS origins"
       }
     },
-    "deployNetworking": {
-      "type": "bool",
-      "defaultValue": true,
-      "metadata": {
-        "description": "Deploy VNET and networking components for enhanced security"
-      }
-    },
-    "vnetAddressPrefix": {
-      "type": "string",
-      "defaultValue": "10.2.0.0/16",
-      "metadata": {
-        "description": "Bottler VNET address space (must not overlap with TCCC VNET)"
-      }
-    },
-    "tcccVnetResourceId": {
-      "type": "string",
-      "defaultValue": "",
-      "metadata": {
-        "description": "TCCC VNET Resource ID for cross-tenant peering (optional)"
-      }
-    },
-    "enableCrossTenantPeering": {
-      "type": "bool",
-      "defaultValue": false,
-      "metadata": {
-        "description": "Enable VNET peering to TCCC tenant for secure communication"
-      }
-    },
     "preDeployedStorageAccountName": {
       "type": "string",
       "metadata": {
@@ -124,16 +96,14 @@
   },
   "variables": {
     "uniqueSuffix": "[substring(uniqueString(resourceGroup().id), 0, 6)]",
-    "keyVaultSuffix": "[substring(uniqueString(resourceGroup().id, deployment().name), 0, 6)]",
     "baseName": "bottler-agent",
     "resourcePrefix": "[format('{0}-{1}', variables('baseName'), parameters('environment'))]",
     "functionAppName": "[format('{0}-func-{1}', variables('resourcePrefix'), variables('uniqueSuffix'))]",
     "storageAccountName": "[parameters('preDeployedStorageAccountName')]",
     "keyVaultName": "[parameters('preDeployedKeyVaultName')]",
+    "appServicePlanName": "[parameters('preDeployedAppServicePlanName')]",
     "vnetName": "[parameters('preDeployedVnetName')]",
-    "nsgPrefix": "[format('{0}-nsg', variables('resourcePrefix'))]",
-    "corsOriginsArray": "[split(parameters('corsAllowedOrigins'), ',')]",
-    "appServicePlanName": "[parameters('preDeployedAppServicePlanName')]"
+    "corsOriginsArray": "[split(parameters('corsAllowedOrigins'), ',')]"
   },
   "resources": [
     {
@@ -275,13 +245,9 @@
       "type": "string",
       "value": "[reference(resourceId('Microsoft.Web/sites', variables('functionAppName')), '2023-01-01', 'full').identity.principalId]"
     },
-    "functionAppIdentityTenantId": {
-      "type": "string",
-      "value": "[reference(resourceId('Microsoft.Web/sites', variables('functionAppName')), '2023-01-01', 'full').identity.tenantId]"
-    },
     "deploymentComplete": {
       "type": "string",
-      "value": "SUCCESS\\! Your Bottler Agent is now deployed and ready for function code deployment."
+      "value": "SUCCESS\\! Bottler Agent is deployed and ready for function code."
     }
   }
 }
