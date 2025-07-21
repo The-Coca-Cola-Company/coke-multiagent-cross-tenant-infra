@@ -2,7 +2,7 @@
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "metadata": {
-    "description": "🚀 Step 2/2: Deploy Function App (references Step 1 infrastructure) - FIXED TIMING ONLY",
+    "description": "🚀 Step 2/2: Deploy Bottler Agent Function App with Service Bus & Event Grid Integration - SPOKE AGENT ORCHESTRATOR",
     "_generator": {
       "name": "bicep",
       "version": "0.20.4.51522",
@@ -92,6 +92,25 @@
       "metadata": {
         "description": "VNET name from Step 1 deployment (if networking enabled)"
       }
+    },
+    "preDeployedServiceBusNamespace": {
+      "type": "string",
+      "metadata": {
+        "description": "Service Bus namespace name from Step 1 deployment"
+      }
+    },
+    "preDeployedEventGridTopic": {
+      "type": "string",
+      "metadata": {
+        "description": "Event Grid topic name from Step 1 deployment"
+      }
+    },
+    "preDeployedCosmosDbName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Cosmos DB account name from Step 1 deployment (if Cosmos DB enabled)"
+      }
     }
   },
   "variables": {
@@ -103,6 +122,9 @@
     "keyVaultName": "[parameters('preDeployedKeyVaultName')]",
     "appServicePlanName": "[parameters('preDeployedAppServicePlanName')]",
     "vnetName": "[parameters('preDeployedVnetName')]",
+    "serviceBusNamespace": "[parameters('preDeployedServiceBusNamespace')]",
+    "eventGridTopic": "[parameters('preDeployedEventGridTopic')]",
+    "cosmosDbName": "[parameters('preDeployedCosmosDbName')]",
     "corsOriginsArray": "[split(parameters('corsAllowedOrigins'), ',')]"
   },
   "resources": [
@@ -170,8 +192,56 @@
               "value": "[parameters('corsAllowedOrigins')]"
             },
             {
+              "name": "SERVICE_BUS_NAMESPACE",
+              "value": "[variables('serviceBusNamespace')]"
+            },
+            {
+              "name": "EVENT_GRID_TOPIC",
+              "value": "[variables('eventGridTopic')]"
+            },
+            {
+              "name": "SPOKE_MESSAGES_QUEUE",
+              "value": "spoke-messages"
+            },
+            {
+              "name": "HUB_COMMANDS_QUEUE",
+              "value": "hub-commands"
+            },
+            {
+              "name": "SPOKE_EVENTS_TOPIC",
+              "value": "spoke-events"
+            },
+            {
+              "name": "SPOKE_ROLE",
+              "value": "financial_expert"
+            },
+            {
+              "name": "HUB_SPOKE_ENFORCEMENT",
+              "value": "strict"
+            },
+            {
+              "name": "CROSS_TENANT_AUTH_ENABLED",
+              "value": "true"
+            },
+            {
+              "name": "SECURITY_LEVEL",
+              "value": "high"
+            },
+            {
+              "name": "VNET_INTEGRATION_ENABLED",
+              "value": "[string(parameters('deployNetworking'))]"
+            },
+            {
+              "name": "COSMOS_DB_ENABLED",
+              "value": "[string(parameters('deployCosmosDB'))]"
+            },
+            {
+              "name": "ENVIRONMENT",
+              "value": "[parameters('environment')]"
+            },
+            {
               "name": "WEBSITE_CONTENTOVERVNET",
-              "value": "1"
+              "value": "[if(parameters('deployNetworking'), '1', '0')]"
             }
           ],
           "pythonVersion": "3.11",
@@ -200,10 +270,67 @@
     {
       "type": "Microsoft.Authorization/roleAssignments",
       "apiVersion": "2022-04-01",
-      "name": "[guid(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), variables('functionAppName'), 'StorageAccountContributor', uniqueString(resourceGroup().id))]",
+      "name": "[guid(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), variables('functionAppName'), 'StorageBlobDataOwner', uniqueString(resourceGroup().id))]",
       "scope": "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
       "properties": {
-        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '17d1049b-9a84-46fb-8f53-869881c3d3ab')]",
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b7e6dc6d-f1e8-4753-8033-0f276bb0955b')]",
+        "principalId": "[reference(resourceId('Microsoft.Web/sites', variables('functionAppName')), '2023-01-01', 'full').identity.principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', variables('functionAppName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "name": "[guid(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), variables('functionAppName'), 'StorageFileDataSMBShareContributor', uniqueString(resourceGroup().id))]",
+      "scope": "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '0c867c2a-1d8c-454a-a3db-ab2ea1bdc8bb')]",
+        "principalId": "[reference(resourceId('Microsoft.Web/sites', variables('functionAppName')), '2023-01-01', 'full').identity.principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', variables('functionAppName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "name": "[guid(resourceId('Microsoft.ServiceBus/namespaces', variables('serviceBusNamespace')), variables('functionAppName'), 'ServiceBusDataOwner', uniqueString(resourceGroup().id))]",
+      "scope": "[resourceId('Microsoft.ServiceBus/namespaces', variables('serviceBusNamespace'))]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '090c5cfd-751d-490a-894a-3ce6f1109419')]",
+        "principalId": "[reference(resourceId('Microsoft.Web/sites', variables('functionAppName')), '2023-01-01', 'full').identity.principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', variables('functionAppName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "name": "[guid(resourceId('Microsoft.EventGrid/topics', variables('eventGridTopic')), variables('functionAppName'), 'EventGridDataSender', uniqueString(resourceGroup().id))]",
+      "scope": "[resourceId('Microsoft.EventGrid/topics', variables('eventGridTopic'))]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'd5a91429-5739-47e2-a06b-3470a27159e7')]",
+        "principalId": "[reference(resourceId('Microsoft.Web/sites', variables('functionAppName')), '2023-01-01', 'full').identity.principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', variables('functionAppName'))]"
+      ]
+    },
+    {
+      "condition": "[parameters('deployCosmosDB')]",
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "name": "[guid(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosDbName')), variables('functionAppName'), 'DocumentDBAccountContributor', uniqueString(resourceGroup().id))]",
+      "scope": "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosDbName'))]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '5bd9cd88-fe45-4216-938b-f97437e15450')]",
         "principalId": "[reference(resourceId('Microsoft.Web/sites', variables('functionAppName')), '2023-01-01', 'full').identity.principalId]",
         "principalType": "ServicePrincipal"
       },
@@ -220,7 +347,12 @@
         "AzureWebJobsStorage__credential": "managedidentity",
         "APPLICATIONINSIGHTS_CONNECTION_STRING": "[format('@Microsoft.KeyVault(SecretUri={0}secrets/appinsights-connection-string/)', reference(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName')), '2023-07-01').vaultUri)]",
         "COSMOS_DB_ENDPOINT": "[if(parameters('deployCosmosDB'), format('@Microsoft.KeyVault(SecretUri={0}secrets/cosmos-endpoint/)', reference(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName')), '2023-07-01').vaultUri), '')]",
-        "COSMOS_DB_KEY": "[if(parameters('deployCosmosDB'), format('@Microsoft.KeyVault(SecretUri={0}secrets/cosmos-key/)', reference(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName')), '2023-07-01').vaultUri), '')]"
+        "COSMOS_DB_KEY": "[if(parameters('deployCosmosDB'), format('@Microsoft.KeyVault(SecretUri={0}secrets/cosmos-key/)', reference(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName')), '2023-07-01').vaultUri), '')]",
+        "AI_FOUNDRY_ENDPOINT": "[format('@Microsoft.KeyVault(SecretUri={0}secrets/ai-foundry-endpoint/)', reference(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName')), '2023-07-01').vaultUri)]",
+        "SERVICE_BUS_CONNECTION_STRING": "[format('@Microsoft.KeyVault(SecretUri={0}secrets/servicebus-connection-string/)', reference(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName')), '2023-07-01').vaultUri)]",
+        "EVENT_GRID_ENDPOINT": "[format('@Microsoft.KeyVault(SecretUri={0}secrets/eventgrid-endpoint/)', reference(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName')), '2023-07-01').vaultUri)]",
+        "EVENT_GRID_ACCESS_KEY": "[format('@Microsoft.KeyVault(SecretUri={0}secrets/eventgrid-access-key/)', reference(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName')), '2023-07-01').vaultUri)]",
+        "AZURE_CLIENT_ID": "[reference(resourceId('Microsoft.Web/sites', variables('functionAppName')), '2023-01-01', 'full').identity.principalId]"
       },
       "dependsOn": [
         "[resourceId('Microsoft.Web/sites', variables('functionAppName'))]"
@@ -242,21 +374,63 @@
     },
     "storageRoleAssignmentGuid": {
       "type": "string",
-      "value": "[guid(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), variables('functionAppName'), 'StorageAccountContributor', uniqueString(resourceGroup().id))]",
+      "value": "[guid(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), variables('functionAppName'), 'StorageBlobDataOwner', uniqueString(resourceGroup().id))]",
       "metadata": {
-        "description": "GUID of the Storage Account Contributor role assignment for the Function App"
+        "description": "GUID of the Storage Blob Data Owner role assignment for the Bottler Agent Function App"
+      }
+    },
+    "storageFileRoleAssignmentGuid": {
+      "type": "string",
+      "value": "[guid(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), variables('functionAppName'), 'StorageFileDataSMBShareContributor', uniqueString(resourceGroup().id))]",
+      "metadata": {
+        "description": "GUID of the Storage File Data SMB Share Contributor role assignment for the Bottler Agent Function App"
       }
     },
     "keyVaultRoleAssignmentGuid": {
       "type": "string",
       "value": "[guid(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName')), variables('functionAppName'), 'KeyVaultSecretsUser', uniqueString(resourceGroup().id))]",
       "metadata": {
-        "description": "GUID of the Key Vault Secrets User role assignment for the Function App"
+        "description": "GUID of the Key Vault Secrets User role assignment for the Bottler Agent Function App"
+      }
+    },
+    "serviceBusRoleAssignmentGuid": {
+      "type": "string",
+      "value": "[guid(resourceId('Microsoft.ServiceBus/namespaces', variables('serviceBusNamespace')), variables('functionAppName'), 'ServiceBusDataOwner', uniqueString(resourceGroup().id))]",
+      "metadata": {
+        "description": "GUID of the Service Bus Data Owner role assignment for the Bottler Agent Function App"
+      }
+    },
+    "eventGridRoleAssignmentGuid": {
+      "type": "string",
+      "value": "[guid(resourceId('Microsoft.EventGrid/topics', variables('eventGridTopic')), variables('functionAppName'), 'EventGridDataSender', uniqueString(resourceGroup().id))]",
+      "metadata": {
+        "description": "GUID of the Event Grid Data Sender role assignment for the Bottler Agent Function App"
+      }
+    },
+    "cosmosRoleAssignmentGuid": {
+      "type": "string",
+      "value": "[if(parameters('deployCosmosDB'), guid(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosDbName')), variables('functionAppName'), 'DocumentDBAccountContributor', uniqueString(resourceGroup().id)), '')]",
+      "metadata": {
+        "description": "GUID of the DocumentDB Account Contributor role assignment for the Bottler Agent Function App"
+      }
+    },
+    "bottlerAgentEndpoints": {
+      "type": "object",
+      "value": {
+        "agentUrl": "[reference(resourceId('Microsoft.Web/sites', variables('functionAppName')), '2023-01-01').defaultHostName]",
+        "serviceBusNamespace": "[variables('serviceBusNamespace')]",
+        "eventGridTopic": "[variables('eventGridTopic')]",
+        "spokeMessagesQueue": "spoke-messages",
+        "hubCommandsQueue": "hub-commands",
+        "spokeEventsTopic": "spoke-events"
+      },
+      "metadata": {
+        "description": "Bottler Agent endpoints for TCCC Hub integration"
       }
     },
     "deploymentComplete": {
       "type": "string",
-      "value": "SUCCESS! Bottler Agent is deployed and ready for function code."
+      "value": "🎯 SUCCESS! BOTTLER AGENT is deployed and ready for enterprise hub-spoke orchestration!"
     }
   }
 }
