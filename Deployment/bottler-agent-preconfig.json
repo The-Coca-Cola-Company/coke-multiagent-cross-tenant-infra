@@ -2,11 +2,11 @@
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "metadata": {
-    "description": "🔐 Step 1/2: Deploy infrastructure, set secrets, assign roles",
+    "description": "🔐 Step 1/2: Deploy Bottler Agent infrastructure with Service Bus & Event Grid integration - SPOKE AGENT INFRASTRUCTURE - SYNTAX FIXED",
     "_generator": {
       "name": "bicep",
       "version": "0.20.4.51522",
-      "templateHash": "12345678901234567890"
+      "templateHash": "98765432109876543210"
     }
   },
   "parameters": {
@@ -54,7 +54,7 @@
       "type": "string",
       "defaultValue": "10.2.0.0/16",
       "metadata": {
-        "description": "Bottler VNET address space (must not overlap with TCCC VNET)"
+        "description": "Bottler VNET address space (must not overlap with TCCC VNET 10.1.0.0/16)"
       }
     }
   },
@@ -176,6 +176,15 @@
                 },
                 {
                   "service": "Microsoft.Web"
+                },
+                {
+                  "service": "Microsoft.ServiceBus"
+                },
+                {
+                  "service": "Microsoft.EventHub"
+                },
+                {
+                  "service": "Microsoft.AzureCosmosDB"
                 }
               ],
               "delegations": [
@@ -194,6 +203,20 @@
               "addressPrefix": "10.2.2.0/24",
               "networkSecurityGroup": "[if(parameters('deployNetworking'), createObject('id', resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-pe-{1}', variables('nsgPrefix'), variables('uniqueSuffix')))), null())]",
               "privateEndpointNetworkPolicies": "Disabled"
+            }
+          },
+          {
+            "name": "snet-hub-communication",
+            "properties": {
+              "addressPrefix": "10.2.3.0/24",
+              "serviceEndpoints": [
+                {
+                  "service": "Microsoft.ServiceBus"
+                },
+                {
+                  "service": "Microsoft.EventHub"
+                }
+              ]
             }
           }
         ]
@@ -267,8 +290,13 @@
             "name": "EnableServerless"
           }
         ],
-        "publicNetworkAccess": "[if(parameters('deployNetworking'), 'Disabled', 'Enabled')]"
-      }
+        "publicNetworkAccess": "[if(parameters('deployNetworking'), 'Disabled', 'Enabled')]",
+        "isVirtualNetworkFilterEnabled": "[parameters('deployNetworking')]",
+        "virtualNetworkRules": "[if(parameters('deployNetworking'), json(concat('[{\"id\": \"', format('{0}/subnets/snet-functions', resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))), '\", \"ignoreMissingVNetServiceEndpoint\": false}]')), json('[]'))]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ]
     },
     {
       "condition": "[parameters('deployAIFoundry')]",
@@ -288,13 +316,158 @@
         "applicationInsights": "[resourceId('Microsoft.Insights/components', format('{0}-ai-{1}', variables('resourcePrefix'), variables('uniqueSuffix')))]",
         "hbiWorkspace": false,
         "managedNetwork": {
-          "isolationMode": "AllowInternetOutbound"
+          "isolationMode": "[if(parameters('deployNetworking'), 'AllowOnlyApprovedOutbound', 'AllowInternetOutbound')]"
         }
       },
       "dependsOn": [
         "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
         "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
         "[resourceId('Microsoft.Insights/components', format('{0}-ai-{1}', variables('resourcePrefix'), variables('uniqueSuffix')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.ServiceBus/namespaces",
+      "apiVersion": "2022-10-01-preview",
+      "name": "[format('{0}-sb-{1}', variables('resourcePrefix'), variables('uniqueSuffix'))]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Premium",
+        "tier": "Premium",
+        "capacity": 1
+      },
+      "properties": {
+        "publicNetworkAccess": "[if(parameters('deployNetworking'), 'Disabled', 'Enabled')]",
+        "networkRuleSets": "[if(parameters('deployNetworking'), json(concat('{\"defaultAction\": \"Deny\", \"virtualNetworkRules\": [{\"subnet\": {\"id\": \"', format('{0}/subnets/snet-functions', resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))), '\"}, \"ignoreMissingVnetServiceEndpoint\": false}, {\"subnet\": {\"id\": \"', format('{0}/subnets/snet-hub-communication', resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))), '\"}, \"ignoreMissingVnetServiceEndpoint\": false}]}')), json('{\"defaultAction\": \"Allow\"}'))]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.ServiceBus/namespaces/queues",
+      "apiVersion": "2022-10-01-preview",
+      "name": "[format('{0}/{1}', format('{0}-sb-{1}', variables('resourcePrefix'), variables('uniqueSuffix')), 'spoke-messages')]",
+      "properties": {
+        "maxSizeInMegabytes": 1024,
+        "defaultMessageTimeToLive": "P14D",
+        "deadLetteringOnMessageExpiration": true,
+        "maxDeliveryCount": 10
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ServiceBus/namespaces', format('{0}-sb-{1}', variables('resourcePrefix'), variables('uniqueSuffix')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.ServiceBus/namespaces/queues",
+      "apiVersion": "2022-10-01-preview",
+      "name": "[format('{0}/{1}', format('{0}-sb-{1}', variables('resourcePrefix'), variables('uniqueSuffix')), 'hub-commands')]",
+      "properties": {
+        "maxSizeInMegabytes": 2048,
+        "defaultMessageTimeToLive": "P7D",
+        "deadLetteringOnMessageExpiration": true,
+        "maxDeliveryCount": 5
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ServiceBus/namespaces', format('{0}-sb-{1}', variables('resourcePrefix'), variables('uniqueSuffix')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.ServiceBus/namespaces/topics",
+      "apiVersion": "2022-10-01-preview",
+      "name": "[format('{0}/{1}', format('{0}-sb-{1}', variables('resourcePrefix'), variables('uniqueSuffix')), 'spoke-events')]",
+      "properties": {
+        "maxSizeInMegabytes": 2048,
+        "defaultMessageTimeToLive": "P14D"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ServiceBus/namespaces', format('{0}-sb-{1}', variables('resourcePrefix'), variables('uniqueSuffix')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.EventGrid/topics",
+      "apiVersion": "2022-06-15",
+      "name": "[format('{0}-eg-{1}', variables('resourcePrefix'), variables('uniqueSuffix'))]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "publicNetworkAccess": "[if(parameters('deployNetworking'), 'Disabled', 'Enabled')]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ]
+    },
+    {
+      "condition": "[parameters('deployNetworking')]",
+      "type": "Microsoft.Network/privateEndpoints",
+      "apiVersion": "2023-06-01",
+      "name": "[format('{0}-sb-pe-{1}', variables('resourcePrefix'), variables('uniqueSuffix'))]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "subnet": {
+          "id": "[format('{0}/subnets/snet-private-endpoints', resourceId('Microsoft.Network/virtualNetworks', variables('vnetName')))]"
+        },
+        "privateLinkServiceConnections": [
+          {
+            "name": "servicebus-connection",
+            "properties": {
+              "privateLinkServiceId": "[resourceId('Microsoft.ServiceBus/namespaces', format('{0}-sb-{1}', variables('resourcePrefix'), variables('uniqueSuffix')))]",
+              "groupIds": ["namespace"]
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ServiceBus/namespaces', format('{0}-sb-{1}', variables('resourcePrefix'), variables('uniqueSuffix')))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ]
+    },
+    {
+      "condition": "[parameters('deployNetworking')]",
+      "type": "Microsoft.Network/privateEndpoints",
+      "apiVersion": "2023-06-01",
+      "name": "[format('{0}-eg-pe-{1}', variables('resourcePrefix'), variables('uniqueSuffix'))]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "subnet": {
+          "id": "[format('{0}/subnets/snet-private-endpoints', resourceId('Microsoft.Network/virtualNetworks', variables('vnetName')))]"
+        },
+        "privateLinkServiceConnections": [
+          {
+            "name": "eventgrid-connection",
+            "properties": {
+              "privateLinkServiceId": "[resourceId('Microsoft.EventGrid/topics', format('{0}-eg-{1}', variables('resourcePrefix'), variables('uniqueSuffix')))]",
+              "groupIds": ["topic"]
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.EventGrid/topics', format('{0}-eg-{1}', variables('resourcePrefix'), variables('uniqueSuffix')))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ]
+    },
+    {
+      "condition": "[parameters('deployNetworking')]",
+      "type": "Microsoft.Network/privateEndpoints",
+      "apiVersion": "2023-06-01",
+      "name": "[format('{0}-cosmos-pe-{1}', variables('resourcePrefix'), variables('uniqueSuffix'))]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "subnet": {
+          "id": "[format('{0}/subnets/snet-private-endpoints', resourceId('Microsoft.Network/virtualNetworks', variables('vnetName')))]"
+        },
+        "privateLinkServiceConnections": [
+          {
+            "name": "cosmos-connection",
+            "properties": {
+              "privateLinkServiceId": "[resourceId('Microsoft.DocumentDB/databaseAccounts', format('{0}-cosmos-{1}', variables('resourcePrefix'), variables('uniqueSuffix')))]",
+              "groupIds": ["Sql"]
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts', format('{0}-cosmos-{1}', variables('resourcePrefix'), variables('uniqueSuffix')))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
       ]
     },
     {
@@ -346,6 +519,55 @@
         "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
         "[resourceId('Microsoft.DocumentDB/databaseAccounts', format('{0}-cosmos-{1}', variables('resourcePrefix'), variables('uniqueSuffix')))]"
       ]
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "apiVersion": "2023-07-01",
+      "name": "[format('{0}/servicebus-connection-string', variables('keyVaultName'))]",
+      "properties": {
+        "value": "[listKeys(resourceId('Microsoft.ServiceBus/namespaces/authorizationRules', format('{0}-sb-{1}', variables('resourcePrefix'), variables('uniqueSuffix')), 'RootManageSharedAccessKey'), '2022-10-01-preview').primaryConnectionString]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
+        "[resourceId('Microsoft.ServiceBus/namespaces', format('{0}-sb-{1}', variables('resourcePrefix'), variables('uniqueSuffix')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "apiVersion": "2023-07-01",
+      "name": "[format('{0}/eventgrid-access-key', variables('keyVaultName'))]",
+      "properties": {
+        "value": "[listKeys(resourceId('Microsoft.EventGrid/topics', format('{0}-eg-{1}', variables('resourcePrefix'), variables('uniqueSuffix'))), '2022-06-15').key1]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
+        "[resourceId('Microsoft.EventGrid/topics', format('{0}-eg-{1}', variables('resourcePrefix'), variables('uniqueSuffix')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "apiVersion": "2023-07-01",
+      "name": "[format('{0}/eventgrid-endpoint', variables('keyVaultName'))]",
+      "properties": {
+        "value": "[reference(resourceId('Microsoft.EventGrid/topics', format('{0}-eg-{1}', variables('resourcePrefix'), variables('uniqueSuffix'))), '2022-06-15').endpoint]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
+        "[resourceId('Microsoft.EventGrid/topics', format('{0}-eg-{1}', variables('resourcePrefix'), variables('uniqueSuffix')))]"
+      ]
+    },
+    {
+      "condition": "[parameters('deployAIFoundry')]",
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "apiVersion": "2023-07-01",
+      "name": "[format('{0}/ai-foundry-endpoint', variables('keyVaultName'))]",
+      "properties": {
+        "value": "[reference(resourceId('Microsoft.MachineLearningServices/workspaces', format('{0}-aihub-{1}', variables('resourcePrefix'), variables('uniqueSuffix'))), '2023-10-01').discoveryUrl]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
+        "[resourceId('Microsoft.MachineLearningServices/workspaces', format('{0}-aihub-{1}', variables('resourcePrefix'), variables('uniqueSuffix')))]"
+      ]
     }
   ],
   "outputs": {
@@ -369,13 +591,25 @@
       "type": "string",
       "value": "[if(parameters('deployNetworking'), variables('vnetName'), '')]"
     },
-    "appInsightsName": {
+    "serviceBusNamespace": {
       "type": "string",
-      "value": "[format('{0}-ai-{1}', variables('resourcePrefix'), variables('uniqueSuffix'))]"
+      "value": "[format('{0}-sb-{1}', variables('resourcePrefix'), variables('uniqueSuffix'))]"
+    },
+    "eventGridTopic": {
+      "type": "string",
+      "value": "[format('{0}-eg-{1}', variables('resourcePrefix'), variables('uniqueSuffix'))]"
+    },
+    "aiFoundryHub": {
+      "type": "string",
+      "value": "[if(parameters('deployAIFoundry'), format('{0}-aihub-{1}', variables('resourcePrefix'), variables('uniqueSuffix')), '')]"
+    },
+    "hubCommunicationSubnet": {
+      "type": "string", 
+      "value": "[if(parameters('deployNetworking'), format('{0}/subnets/snet-hub-communication', resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))), '')]"
     },
     "readyForStep2": {
       "type": "string",
-      "value": "Step 1 Complete! All secrets created. Wait 60-90 seconds then deploy Step 2."
+      "value": "✅ BOTTLER AGENT INFRASTRUCTURE READY! Service Bus & Event Grid deployed with VNET integration. Wait 60-90 seconds then deploy Step 2."
     }
   }
 }
