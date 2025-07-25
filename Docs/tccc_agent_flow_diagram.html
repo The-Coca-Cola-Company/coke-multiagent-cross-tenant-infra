@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TCCC Hub Manager - Professional Agent Flow Diagram v2.1</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+            backdrop-filter: blur(10px);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: linear-gradient(45deg, #2c3e50, #34495e);
+            border-radius: 15px;
+            color: white;
+        }
+        
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 2.5em;
+            font-weight: 700;
+        }
+        
+        .header p {
+            margin: 0;
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .flow-diagram {
+            display: grid;
+            gap: 30px;
+            margin-top: 30px;
+        }
+        
+        .flow-section {
+            border: 3px solid #34495e;
+            border-radius: 15px;
+            padding: 25px;
+            background: linear-gradient(45deg, #f8f9fa, #e9ecef);
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .flow-section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(52, 73, 94, 0.2);
+        }
+        
+        .section-title {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #34495e;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .emoji {
+            font-size: 1.5em;
+        }
+        
+        .component {
+            background: white;
+            border: 2px solid #7f8c8d;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+        
+        .component:hover {
+            border-color: #34495e;
+            transform: scale(1.02);
+        }
+        
+        .component-title {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+        
+        .component-details {
+            color: #5a6c7d;
+            font-size: 0.95em;
+            line-height: 1.4;
+        }
+        
+        .framework {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+        }
+        
+        .framework .component-title {
+            color: #ffffff;
+        }
+        
+        .framework .component-details {
+            color: #ffffff;
+            opacity: 0.9;
+        }
+        
+        .enterprise {
+            background: linear-gradient(45deg, #34495e, #2c3e50);
+            color: white;
+            border: none;
+        }
+        
+        .enterprise .component-title {
+            color: #ffffff;
+        }
+        
+        .enterprise .component-details {
+            color: #ffffff;
+            opacity: 0.9;
+        }
+        
+        .flow-arrow {
+            text-align: center;
+            font-size: 2em;
+            color: #34495e;
+            margin: 20px 0;
+            animation: bounce 2s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-10px);
+            }
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+        
+        .endpoint-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .endpoint {
+            background: linear-gradient(45deg, #95a5a6, #7f8c8d);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 2px solid #34495e;
+        }
+        
+        .endpoint:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 25px rgba(52, 73, 94, 0.3);
+        }
+        
+        .method {
+            font-weight: bold;
+            font-size: 0.9em;
+            background: rgba(255, 255, 255, 0.25);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 5px;
+            margin-right: 8px;
+        }
+        
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-active { background: #27ae60; }
+        .status-monitoring { background: #f39c12; }
+        .status-critical { background: #e74c3c; }
+        
+        .code-snippet {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            overflow-x: auto;
+            border-left: 4px solid #3498db;
+        }
+        
+        .integration-flow {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .integration-step {
+            background: linear-gradient(90deg, #34495e, #2c3e50);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 25px;
+            position: relative;
+            margin-left: 20px;
+        }
+        
+        .integration-step::before {
+            content: '';
+            position: absolute;
+            left: -20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 15px;
+            height: 15px;
+            background: #3498db;
+            border-radius: 50%;
+            border: 3px solid white;
+        }
+        
+        .legend {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 30px;
+            border: 3px solid #34495e;
+        }
+        
+        .legend h3 {
+            margin: 0 0 15px 0;
+            color: #ffffff;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            gap: 10px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+        
+        /* Framework Communication Styles */
+        .framework-communication {
+            position: relative;
+            min-height: 650px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+        }
+        
+        .communication-center {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 40px;
+        }
+        
+        .hub-orchestrator {
+            background: linear-gradient(45deg, #2c3e50, #34495e);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 50px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(44, 62, 80, 0.4);
+            transform: translateZ(0);
+        }
+        
+        .hub-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .hub-subtitle {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        
+        .framework-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        .framework-node {
+            background: white;
+            border: 3px solid;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        .framework-node:hover {
+            transform: translateY(-8px) scale(1.05);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .security-node { border-color: #e74c3c; }
+        .mcp-node { border-color: #9b59b6; }
+        .sk-node { border-color: #3498db; }
+        .autogen-node { border-color: #27ae60; }
+        .ai-foundry-node { border-color: #f39c12; }
+        .cosmos-node { border-color: #34495e; }
+        
+        .node-header {
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid currentColor;
+        }
+        
+        .security-node .node-header { color: #e74c3c; }
+        .mcp-node .node-header { color: #9b59b6; }
+        .sk-node .node-header { color: #3498db; }
+        .autogen-node .node-header { color: #27ae60; }
+        .ai-foundry-node .node-header { color: #f39c12; }
+        .cosmos-node .node-header { color: #34495e; }
+        
+        .node-content {
+            flex: 1;
+            margin: 10px 0;
+        }
+        
+        .module, .tool, .plugin, .agent, .model, .container {
+            background: rgba(52, 73, 94, 0.1);
+            padding: 4px 8px;
+            margin: 3px 0;
+            border-radius: 12px;
+            font-size: 0.85em;
+            border-left: 3px solid #34495e;
+        }
+        
+        .tool { border-left-color: #9b59b6; }
+        .plugin { border-left-color: #3498db; }
+        .agent { border-left-color: #27ae60; }
+        .model { border-left-color: #f39c12; }
+        .container { border-left-color: #34495e; }
+        
+        .node-purpose {
+            font-size: 0.9em;
+            font-style: italic;
+            color: #7f8c8d;
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px solid #ecf0f1;
+        }
+        
+        .communication-flows {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .flow-svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .framework-node {
+            z-index: 2;
+            position: relative;
+        }
+        
+        .communication-sequence {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .sequence-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            text-align: center;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #34495e;
+        }
+        
+        .sequence-steps {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        
+        .sequence-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            padding: 15px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .sequence-step:hover {
+            transform: translateX(10px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .step-1 { background: linear-gradient(90deg, #ffe5e5, #ffebeb); border-left: 4px solid #e74c3c; }
+        .step-2 { background: linear-gradient(90deg, #f3e8ff, #f8f0ff); border-left: 4px solid #9b59b6; }
+        .step-3 { background: linear-gradient(90deg, #e3f2fd, #f0f8ff); border-left: 4px solid #3498db; }
+        .step-4 { background: linear-gradient(90deg, #e8f5e8, #f0f8f0); border-left: 4px solid #27ae60; }
+        .step-5 { background: linear-gradient(90deg, #fff8e1, #fffcf0); border-left: 4px solid #f39c12; }
+        .step-6 { background: linear-gradient(90deg, #f5f5f5, #fafafa); border-left: 4px solid #34495e; }
+        
+        .step-number {
+            background: linear-gradient(45deg, #2c3e50, #34495e);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.1em;
+            flex-shrink: 0;
+            box-shadow: 0 5px 15px rgba(44, 62, 80, 0.4);
+        }
+        
+        .step-content {
+            flex: 1;
+        }
+        
+        .step-content strong {
+            display: block;
+            margin-bottom: 5px;
+            color: #2c3e50;
+        }
+        
+        .step-content code {
+            background: rgba(52, 73, 94, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #7f8c8d;
+            display: block;
+            margin: 2px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏢 TCCC Hub Manager - Agent Flow Diagram</h1>
+            <p>Enterprise Hub Coordinator Agent v2.1 - Dynamic Agent Management System</p>
+        </div>
+        
+        <div class="flow-diagram">
+            <!-- 1. Enterprise System Initialization -->
+            <div class="flow-section">
+                <div class="section-title">
+                    <span class="emoji">🚀</span>
+                    1. Enterprise System Initialization
+                </div>
+                
+                <div class="component enterprise">
+                    <div class="component-title">Service Container & Integration Layer</div>
+                    <div class="component-details">
+                        <strong>EnterpriseServiceContainer:</strong> Centralized service management<br>
+                        <strong>TCCCEnterpriseServiceProvider:</strong> Enterprise service provider<br>
+                        <strong>Config Base Path:</strong> /config/ (MCP, AutoGen, Agent configs)
+                    </div>
+                </div>
+                
+                <div class="two-column">
+                    <div class="component enterprise">
+                        <div class="component-title">Enterprise Modules (10 modules)</div>
+                        <div class="component-details">
+                            <span class="status-indicator status-active"></span>CosmosDBEnterpriseModule<br>
+                            <span class="status-indicator status-active"></span>EnterpriseMCPProtocolModule<br>
+                            <span class="status-indicator status-critical"></span>EnterpriseSecurityValidationModule<br>
+                            <span class="status-indicator status-active"></span>HubSpokeEnforcerModule<br>
+                            <span class="status-indicator status-active"></span>SemanticKernelEnterpriseModule
+                        </div>
+                    </div>
+                    
+                    <div class="component enterprise">
+                        <div class="component-title">Additional Enterprise Modules</div>
+                        <div class="component-details">
+                            <span class="status-indicator status-active"></span>AutoGenEnterpriseIntegrationModule<br>
+                            <span class="status-indicator status-active"></span>AzureAIFoundryCoreIntegration<br>
+                            <span class="status-indicator status-monitoring"></span>EnterpriseWorkflowOrchestrator<br>
+                            <span class="status-indicator status-active"></span>AzureKeyVaultModule<br>
+                            <span class="status-indicator status-active"></span>A2AOrchestrationModule
+                        </div>
+                    </div>
+                </div>
+
+                <div class="integration-flow">
+                    <div class="integration-step">ensure_cosmos_initialized() → Initialize Cosmos DB and all modules</div>
+                    <div class="integration-step">ensure_mcp_initialized() → Configure MCP tools and frameworks</div>
+                    <div class="integration-step">ensure_security_initialized() → Load secrets and AAD validation</div>
+                    <div class="integration-step">_verify_config_integration() → Verify complete config integration</div>
+                </div>
+            </div>
+            
+            <div class="flow-arrow">⬇️</div>
+            
+            <!-- 2. Advanced Framework Integrations -->
+            <div class="flow-section">
+                <div class="section-title">
+                    <span class="emoji">🔧</span>
+                    2. Advanced Framework Integrations
+                </div>
+                
+                <div class="component framework">
+                    <div class="component-title">MCP (Model Context Protocol) 2024-11-05</div>
+                    <div class="component-details">
+                        <strong>Config:</strong> /config/mcp/tccc-manager.json<br>
+                        <strong>Tools:</strong> orchestrate_comprehensive_financial_analysis, query_agent_capabilities,
+                        coordinate_distributed_financial_task, generate_consolidated_financial_report<br>
+                        <strong>Endpoints:</strong> /mcp/tools, /mcp/tools/orchestrate, /mcp/tools/sk
+                    </div>
+                </div>
+                
+                <div class="two-column">
+                    <div class="component framework">
+                        <div class="component-title">Semantic Kernel Enterprise Integration</div>
+                        <div class="component-details">
+                            <strong>Plugins:</strong> Orchestration, Synthesis, Financial Analysis<br>
+                            <strong>SK Functions:</strong> agent_selector, task_decomposer, result_synthesizer,
+                            financial_consolidator, risk_aggregator, investment_analyzer<br>
+                            <strong>AI Service:</strong> Azure OpenAI GPT-4 via AI Foundry
+                        </div>
+                    </div>
+                    
+                    <div class="component framework">
+                        <div class="component-title">AutoGen Hub-Spoke A2A</div>
+                        <div class="component-details">
+                            <strong>Config:</strong> /config/autogen-a2a/ (3 files)<br>
+                            <strong>Features:</strong> Multi-agent coordination, PhD-level synthesis<br>
+                            <strong>Endpoints:</strong> /autogen/create-workflow, /autogen/integration-status<br>
+                            <strong>Hub-Spoke:</strong> Enforced communication patterns
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="component framework">
+                    <div class="component-title">Azure AI Foundry Core Integration</div>
+                    <div class="component-details">
+                        <strong>PhD Financial Models:</strong> Enterprise valuation, investment banking analysis<br>
+                        <strong>Advanced Capabilities:</strong> Market intelligence, supply chain optimization<br>
+                        <strong>Integration:</strong> configure_phd_financial_models(), load_financial_expertise_plugins()
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flow-arrow">⬇️</div>
+            
+            <!-- 3. Spoke Agent Management -->
+            <div class="flow-section">
+                <div class="section-title">
+                    <span class="emoji">👥</span>
+                    3. Spoke Agent Management & Registration
+                </div>
+                
+                <div class="component">
+                    <div class="component-title">SpokeAgentModel (Pydantic Validation)</div>
+                    <div class="component-details">
+                        <strong>Fields:</strong> id, display_name, endpoint, enabled, region, status, metadata<br>
+                        <strong>Capabilities:</strong> FINANCIAL_ANALYSIS, MARKET_RESEARCH, SUPPLY_CHAIN, etc.<br>
+                        <strong>Validation:</strong> URL validation, metadata requirements, capability checks
+                    </div>
+                </div>
+                
+                <div class="two-column">
+                    <div class="component">
+                        <div class="component-title">Agent Registration (/agent-register)</div>
+                        <div class="component-details">
+                            <strong>Security:</strong> AAD validation, rate limiting, IP validation<br>
+                            <strong>Storage:</strong> CosmosDB containers (spoke_agents)<br>
+                            <strong>Audit:</strong> audit_logs container with complete details<br>
+                            <strong>Capacity:</strong> MAX_AGENTS_LIMIT = 100
+                        </div>
+                    </div>
+                    
+                    <div class="component">
+                        <div class="component-title">Agent Discovery (/agents)</div>
+                        <div class="component-details">
+                            <strong>Filters:</strong> enabled_only, capability, region<br>
+                            <strong>Cache:</strong> 2-minute TTL (AgentCache)<br>
+                            <strong>Performance:</strong> Latency metrics included<br>
+                            <strong>Response:</strong> JSON with capabilities and avg_latency_ms
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flow-arrow">⬇️</div>
+            
+            <!-- 4. Health Monitoring & Performance -->
+            <div class="flow-section">
+                <div class="section-title">
+                    <span class="emoji">🔄</span>
+                    4. Health Monitoring & Performance Tracking
+                </div>
+                
+                <div class="component">
+                    <div class="component-title">AgentHealthChecker (HTTP Health Checks)</div>
+                    <div class="component-details">
+                        <strong>Method:</strong> HTTP GET to {endpoint}/health or health_check_url<br>
+                        <strong>Timeout:</strong> 10 seconds<br>
+                        <strong>Frequency:</strong> Timer trigger every 5 minutes<br>
+                        <strong>Status Updates:</strong> ACTIVE ↔ UNHEALTHY automatic
+                    </div>
+                </div>
+                
+                <div class="two-column">
+                    <div class="component">
+                        <div class="component-title">LatencyMonitor (Smart Routing)</div>
+                        <div class="component-details">
+                            <strong>History:</strong> 10 samples per agent (deque)<br>
+                            <strong>Thread-Safe:</strong> threading.Lock for concurrency<br>
+                            <strong>Performance Tiers:</strong> excellent (&lt;1s), good (&lt;3s), poor (≥3s)<br>
+                            <strong>Best Agents:</strong> get_best_performing_agents()
+                        </div>
+                    </div>
+                    
+                    <div class="component">
+                        <div class="component-title">Heartbeat System (/agent-heartbeat)</div>
+                        <div class="component-details">
+                            <strong>Container:</strong> agent_heartbeats (CosmosDB)<br>
+                            <strong>Timeout:</strong> 10 minutes without heartbeat = disabled<br>
+                            <strong>Timer:</strong> heartbeat_monitor every 5 minutes<br>
+                            <strong>Auto-disable:</strong> Stale agents automatically
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="endpoint-grid">
+                    <div class="endpoint">
+                        <span class="method">GET</span>/agents/health<br>
+                        Health check all agents
+                    </div>
+                    <div class="endpoint">
+                        <span class="method">GET</span>/agents/performance<br>
+                        Latency metrics and ranking
+                    </div>
+                    <div class="endpoint">
+                        <span class="method">POST</span>/agents/{id}/disable<br>
+                        Disable specific agent
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flow-arrow">⬇️</div>
+            
+            <!-- 5. Hub-Spoke Security Enforcement -->
+            <div class="flow-section">
+                <div class="section-title">
+                    <span class="emoji">🔐</span>
+                    5. Hub-Spoke Security Enforcement (Anti-Trust Compliance)
+                </div>
+                
+                <div class="component enterprise">
+                    <div class="component-title">HubSpokeEnforcerModule (CRITICAL for Anti-Trust)</div>
+                    <div class="component-details">
+                        <strong>Pattern:</strong> Hub-only communication, NO direct spoke-to-spoke<br>
+                        <strong>Validation:</strong> validate_communication_pattern() on each request<br>
+                        <strong>Audit:</strong> hub_spoke_violation_blocked logs automatically<br>
+                        <strong>Compliance:</strong> "Direct spoke-to-spoke communication violates anti-trust regulations"
+                    </div>
+                </div>
+                
+                <div class="two-column">
+                    <div class="component enterprise">
+                        <div class="component-title">SecurityValidationModule</div>
+                        <div class="component-details">
+                            <strong>AAD:</strong> Azure Active Directory token validation<br>
+                            <strong>Rate Limiting:</strong> IP-based with check_rate_limit()<br>
+                            <strong>API Keys:</strong> X-TCCC-API-Key header validation<br>
+                            <strong>Secrets:</strong> Azure Key Vault integration
+                        </div>
+                    </div>
+                    
+                    <div class="component enterprise">
+                        <div class="component-title">Multi-Bottler Support</div>
+                        <div class="component-details">
+                            <strong>Cross-Tenant:</strong> BOTTLER_TENANT_IDS, BOTTLER_APP_IDS<br>
+                            <strong>Auth:</strong> CROSS_TENANT_AUTH_ENABLED<br>
+                            <strong>VNet:</strong> VNET_INTEGRATION_ENABLED<br>
+                            <strong>Environment:</strong> Configurable security level
+                        </div>
+                    </div>
+                </div>
+
+                <div class="endpoint-grid">
+                    <div class="endpoint">
+                        <span class="method">GET</span>/hub-spoke/status<br>
+                        Enforcement status
+                    </div>
+                    <div class="endpoint">
+                        <span class="method">GET</span>/hub-spoke/violations<br>
+                        Violation reports
+                    </div>
+                    <div class="endpoint">
+                        <span class="method">POST</span>/hub-spoke/validate-communication<br>
+                        Validate communication
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flow-arrow">⬇️</div>
+            
+            <!-- 6. Dynamic Multi-Framework Orchestration -->
+            <div class="flow-section">
+                <div class="section-title">
+                    <span class="emoji">📊</span>
+                    6. Dynamic Multi-Framework Orchestration
+                </div>
+                
+                <div class="component">
+                    <div class="component-title">AgentOrchestrator (Smart Routing)</div>
+                    <div class="component-details">
+                        <strong>Capability-Based:</strong> find_best_agent() by AgentCapability<br>
+                        <strong>Performance-Aware:</strong> Uses LatencyMonitor for smart routing<br>
+                        <strong>Load Balancing:</strong> get_best_performing_agents() sorted by latency<br>
+                        <strong>Regional:</strong> Optional region filtering
+                    </div>
+                </div>
+                
+                <div class="integration-flow">
+                    <div class="integration-step">🧠 Semantic Kernel: create_financial_analysis_plan() → PhD-level task decomposition</div>
+                    <div class="integration-step">🤖 AutoGen Hub-Spoke: orchestrate_multi_agent_financial_analysis() → Coordinated execution</div>
+                    <div class="integration-step">📊 Fallback Routing: Individual agent routing if AutoGen fails</div>
+                    <div class="integration-step">🔐 Hub-Spoke Validation: Each communication validated against anti-trust rules</div>
+                </div>
+                
+                <div class="two-column">
+                    <div class="component">
+                        <div class="component-title">Orchestration Endpoint (/orchestrate)</div>
+                        <div class="component-details">
+                            <strong>Input:</strong> capability, region, payload, agent_id (optional)<br>
+                            <strong>Capability Types:</strong> FINANCIAL_ANALYSIS, MARKET_RESEARCH, etc.<br>
+                            <strong>Smart Routing:</strong> Latency-based agent selection<br>
+                            <strong>Tracking:</strong> Request ID, timing, success metrics
+                        </div>
+                    </div>
+                    
+                    <div class="component">
+                        <div class="component-title">MCP Orchestration (/mcp/tools/orchestrate)</div>
+                        <div class="component-details">
+                            <strong>Analysis Types:</strong> enterprise_valuation, investment_banking_analysis<br>
+                            <strong>Multi-Agent:</strong> target_agents array or "all"<br>
+                            <strong>PhD Synthesis:</strong> AutoGen phd_level_synthesis<br>
+                            <strong>Framework Integration:</strong> MCP + SK + AutoGen coordinated
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flow-arrow">⬇️</div>
+            
+            <!-- 7. Request Processing Flow -->
+            <div class="flow-section">
+                <div class="section-title">
+                    <span class="emoji">🔄</span>
+                    7. Request Processing Flow
+                </div>
+                
+                <div class="code-snippet">
+async def orchestrate_request_flow():
+    # 1. Security Validation
+    is_valid, error_msg, auth_info = await security_module.validate_request(req)
+    
+    # 2. Hub-Spoke Pattern Validation
+    validation_result = await hub_spoke_module.validate_communication_pattern(
+        source="tccc-hub", targets=target_agents, operation="financial_analysis"
+    )
+    
+    # 3. Agent Selection (Performance-Based)
+    best_agents = latency_monitor.get_best_performing_agents(candidate_ids)
+    
+    # 4. Framework Coordination
+    if sk_module.is_enabled():
+        task_plan = await sk_module.create_financial_analysis_plan()
+    
+    if autogen_module.is_enabled():
+        results = await autogen_module.orchestrate_multi_agent_financial_analysis()
+    
+    # 5. Execution & Monitoring
+    latency_monitor.record_latency(agent_id, execution_time)
+    await cosmos_module.log_audit_event()
+                </div>
+                
+                <div class="component">
+                    <div class="component-title">Request Lifecycle</div>
+                    <div class="component-details">
+                        <strong>1. Authentication:</strong> AAD token or API key validation<br>
+                        <strong>2. Rate Limiting:</strong> IP-based throttling<br>
+                        <strong>3. Hub-Spoke Validation:</strong> Anti-trust compliance check<br>
+                        <strong>4. Agent Selection:</strong> Capability + performance-based<br>
+                        <strong>5. Framework Coordination:</strong> SK planning + AutoGen execution<br>
+                        <strong>6. Response Processing:</strong> Latency recording + audit logging<br>
+                        <strong>7. Session Cleanup:</strong> @with_session_cleanup decorator
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flow-arrow">⬇️</div>
+            
+            <!-- 8. Data Storage & Audit -->
+            <div class="flow-section">
+                <div class="section-title">
+                    <span class="emoji">💾</span>
+                    8. Data Storage & Audit
+                </div>
+                
+                <div class="component enterprise">
+                    <div class="component-title">CosmosDB Containers</div>
+                    <div class="component-details">
+                        <strong>Database:</strong> tccc_hub_registry<br>
+                        <strong>spoke_agents:</strong> Agent registry with complete metadata<br>
+                        <strong>agent_heartbeats:</strong> Heartbeat timestamps and health status<br>
+                        <strong>audit_logs:</strong> Security logs, violations, operations
+                    </div>
+                </div>
+                
+                <div class="two-column">
+                    <div class="component enterprise">
+                        <div class="component-title">Caching Strategy</div>
+                        <div class="component-details">
+                            <strong>AgentCache:</strong> 2-minute TTL for enabled agents<br>
+                            <strong>Thread-Safe:</strong> threading.Lock for concurrency<br>
+                            <strong>Invalidation:</strong> Manual cache clear on updates<br>
+                            <strong>Performance:</strong> Reduces CosmosDB queries
+                        </div>
+                    </div>
+                    
+                    <div class="component enterprise">
+                        <div class="component-title">Audit & Compliance</div>
+                        <div class="component-details">
+                            <strong>Events:</strong> agent_registration, hub_spoke_violation, periodic_health_check<br>
+                            <strong>Details:</strong> IP address, user agent, auth method, timestamps<br>
+                            <strong>Compliance:</strong> Anti-trust violation tracking<br>
+                            <strong>Retention:</strong> CosmosDB managed lifecycle
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flow-arrow">⬇️</div>
+            
+            <!-- 9. Framework Communication Diagram -->
+            <div class="flow-section">
+                <div class="section-title">
+                    <span class="emoji">🔄</span>
+                    9. Framework Communication Diagram
+                </div>
+                
+                <div class="framework-communication">
+                    <div class="communication-center">
+                        <div class="hub-orchestrator">
+                            <div class="hub-title">🎯 TCCC Hub Orchestrator</div>
+                            <div class="hub-subtitle">Central Coordination Point</div>
+                        </div>
+                    </div>
+                    
+                    <div class="framework-grid">
+                        <!-- Security Layer -->
+                        <div class="framework-node security-node">
+                            <div class="node-header">🔐 Security Layer</div>
+                            <div class="node-content">
+                                <div class="module">SecurityValidationModule</div>
+                                <div class="module">HubSpokeEnforcerModule</div>
+                                <div class="module">AzureKeyVaultModule</div>
+                            </div>
+                            <div class="node-purpose">Validates ALL framework communications</div>
+                        </div>
+                        
+                        <!-- MCP Protocol -->
+                        <div class="framework-node mcp-node">
+                            <div class="node-header">🔧 MCP Protocol</div>
+                            <div class="node-content">
+                                <div class="module">EnterpriseMCPProtocolModule</div>
+                                <div class="tool">orchestrate_comprehensive_financial_analysis</div>
+                                <div class="tool">coordinate_distributed_financial_task</div>
+                            </div>
+                            <div class="node-purpose">Orchestration entry point</div>
+                        </div>
+                        
+                        <!-- Semantic Kernel -->
+                        <div class="framework-node sk-node">
+                            <div class="node-header">🧠 Semantic Kernel</div>
+                            <div class="node-content">
+                                <div class="module">SemanticKernelEnterpriseModule</div>
+                                <div class="plugin">agent_selector</div>
+                                <div class="plugin">task_decomposer</div>
+                                <div class="plugin">financial_consolidator</div>
+                            </div>
+                            <div class="node-purpose">PhD-level planning & analysis</div>
+                        </div>
+                        
+                        <!-- AutoGen A2A -->
+                        <div class="framework-node autogen-node">
+                            <div class="node-header">🤖 AutoGen A2A</div>
+                            <div class="node-content">
+                                <div class="module">AutoGenEnterpriseIntegrationModule</div>
+                                <div class="agent">Hub Coordinator</div>
+                                <div class="agent">Spoke Agents</div>
+                            </div>
+                            <div class="node-purpose">Multi-agent execution</div>
+                        </div>
+                        
+                        <!-- Azure AI Foundry -->
+                        <div class="framework-node ai-foundry-node">
+                            <div class="node-header">🚀 Azure AI Foundry</div>
+                            <div class="node-content">
+                                <div class="module">AzureAIFoundryCoreIntegration</div>
+                                <div class="model">GPT-4 Enterprise</div>
+                                <div class="model">Financial Models</div>
+                            </div>
+                            <div class="node-purpose">AI model serving</div>
+                        </div>
+                        
+                        <!-- Cosmos DB -->
+                        <div class="framework-node cosmos-node">
+                            <div class="node-header">💾 CosmosDB</div>
+                            <div class="node-content">
+                                <div class="module">CosmosDBEnterpriseModule</div>
+                                <div class="container">spoke_agents</div>
+                                <div class="container">audit_logs</div>
+                            </div>
+                            <div class="node-purpose">Enterprise data layer</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Communication Flows -->
+                    <div class="communication-flows">
+                        <svg class="flow-svg" viewBox="0 0 800 600">
+                            <!-- Security to All -->
+                            <path class="security-flow" d="M 400 100 L 200 200" stroke="#e74c3c" stroke-width="3" fill="none" marker-end="url(#arrowhead-red)"/>
+                            <path class="security-flow" d="M 400 100 L 400 200" stroke="#e74c3c" stroke-width="3" fill="none" marker-end="url(#arrowhead-red)"/>
+                            <path class="security-flow" d="M 400 100 L 600 200" stroke="#e74c3c" stroke-width="3" fill="none" marker-end="url(#arrowhead-red)"/>
+                            
+                            <!-- MCP to SK -->
+                            <path class="framework-flow" d="M 250 250 L 350 250" stroke="#9b59b6" stroke-width="4" fill="none" marker-end="url(#arrowhead-purple)"/>
+                            
+                            <!-- SK to AutoGen -->
+                            <path class="framework-flow" d="M 450 250 L 550 250" stroke="#3498db" stroke-width="4" fill="none" marker-end="url(#arrowhead-blue)"/>
+                            
+                            <!-- AutoGen to AI Foundry -->
+                            <path class="framework-flow" d="M 600 280 L 600 350" stroke="#27ae60" stroke-width="4" fill="none" marker-end="url(#arrowhead-green)"/>
+                            
+                            <!-- SK to AI Foundry -->
+                            <path class="framework-flow" d="M 420 280 L 580 350" stroke="#f39c12" stroke-width="3" fill="none" marker-end="url(#arrowhead-orange)"/>
+                            
+                            <!-- All to Cosmos -->
+                            <path class="data-flow" d="M 200 280 L 150 450" stroke="#34495e" stroke-width="2" fill="none" marker-end="url(#arrowhead-gray)"/>
+                            <path class="data-flow" d="M 400 280 L 200 450" stroke="#34495e" stroke-width="2" fill="none" marker-end="url(#arrowhead-gray)"/>
+                            <path class="data-flow" d="M 600 380 L 250 450" stroke="#34495e" stroke-width="2" fill="none" marker-end="url(#arrowhead-gray)"/>
+                            
+                            <!-- Arrow markers -->
+                            <defs>
+                                <marker id="arrowhead-red" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                                    <polygon points="0 0, 10 3.5, 0 7" fill="#e74c3c"/>
+                                </marker>
+                                <marker id="arrowhead-purple" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                                    <polygon points="0 0, 10 3.5, 0 7" fill="#9b59b6"/>
+                                </marker>
+                                <marker id="arrowhead-blue" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                                    <polygon points="0 0, 10 3.5, 0 7" fill="#3498db"/>
+                                </marker>
+                                <marker id="arrowhead-green" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                                    <polygon points="0 0, 10 3.5, 0 7" fill="#27ae60"/>
+                                </marker>
+                                <marker id="arrowhead-orange" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                                    <polygon points="0 0, 10 3.5, 0 7" fill="#f39c12"/>
+                                </marker>
+                                <marker id="arrowhead-gray" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                                    <polygon points="0 0, 10 3.5, 0 7" fill="#34495e"/>
+                                </marker>
+                            </defs>
+                        </svg>
+                    </div>
+                </div>
+                
+                <div class="communication-sequence">
+                    <div class="sequence-title">📋 Typical Communication Sequence</div>
+                    <div class="sequence-steps">
+                        <div class="sequence-step step-1">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <strong>🔐 Security Validation</strong><br>
+                                <code>security_module.validate_request(req)</code><br>
+                                <code>hub_spoke_module.validate_communication_pattern()</code>
+                            </div>
+                        </div>
+                        
+                        <div class="sequence-step step-2">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <strong>🔧 MCP Orchestration</strong><br>
+                                <code>mcp_module.orchestrate_comprehensive_financial_analysis()</code><br>
+                                Receives request and coordinates frameworks
+                            </div>
+                        </div>
+                        
+                        <div class="sequence-step step-3">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <strong>🧠 Semantic Kernel Planning</strong><br>
+                                <code>sk_module.create_financial_analysis_plan()</code><br>
+                                <code>task_plan = await sk_module.create_financial_analysis_plan(analysis_type, target_agents, analysis_parameters)</code>
+                            </div>
+                        </div>
+                        
+                        <div class="sequence-step step-4">
+                            <div class="step-number">4</div>
+                            <div class="step-content">
+                                <strong>🤖 AutoGen Execution</strong><br>
+                                <code>autogen_module.orchestrate_multi_agent_financial_analysis(task_plan=task_plan)</code><br>
+                                Uses SK plan for coordinated multi-agent execution
+                            </div>
+                        </div>
+                        
+                        <div class="sequence-step step-5">
+                            <div class="step-number">5</div>
+                            <div class="step-content">
+                                <strong>🚀 AI Foundry Models</strong><br>
+                                <code>ai_foundry_module.configure_phd_financial_models()</code><br>
+                                Provides GPT-4 and specialized financial models
+                            </div>
+                        </div>
+                        
+                        <div class="sequence-step step-6">
+                            <div class="step-number">6</div>
+                            <div class="step-content">
+                                <strong>💾 Data Persistence</strong><br>
+                                <code>cosmos_module.log_audit_event()</code><br>
+                                All frameworks log to CosmosDB for audit and state
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="code-snippet">
+# 🔄 FRAMEWORK COMMUNICATION EXAMPLE from the code
+async def mcp_orchestrate_comprehensive_financial_analysis():
+    # 1. Security validation FIRST
+    is_valid, error_msg, auth_info = await security_module.validate_request(req)
+    
+    # 2. Hub-spoke enforcement CRITICAL
+    validation_result = await hub_spoke_module.validate_communication_pattern(
+        source="tccc-hub", targets=target_agents, operation="financial_analysis_orchestration"
+    )
+    
+    # 3. Semantic Kernel planning
+    if sk_module.is_enabled():
+        task_plan = await sk_module.create_financial_analysis_plan(
+            analysis_type, target_agents, analysis_parameters
+        )
+    
+    # 4. AutoGen coordination with SK plan
+    if autogen_module.is_enabled():
+        autogen_results = await autogen_module.orchestrate_multi_agent_financial_analysis(
+            analysis_type=analysis_type,
+            target_agents=target_agents,
+            task_plan=task_plan,  # 🧠 SK plan passed to AutoGen
+            orchestration_id=orchestration_id
+        )
+    
+    # 5. AI Foundry models used by both SK and AutoGen
+    await ai_foundry_module.configure_phd_financial_models()
+    
+    # 6. All results stored in Cosmos
+    await cosmos_module.log_audit_event("mcp_orchestration_completed", results)
+                </div>
+            </div>
+            
+            <div class="flow-arrow">⬇️</div>
+            
+            <!-- 10. ARM Template Integration -->
+            <div class="flow-section">
+                <div class="section-title">
+                    <span class="emoji">🏗️</span>
+                    10. ARM Template Integration & Configuration
+                </div>
+                
+                <div class="component enterprise">
+                    <div class="component-title">Environment Configuration</div>
+                    <div class="component-details">
+                        <strong>AGENT_TYPE:</strong> TCCC_HUB (from ARM template)<br>
+                        <strong>ORCHESTRATION_MODE:</strong> enterprise<br>
+                        <strong>MULTI_BOTTLER_SUPPORT:</strong> Cross-tenant capabilities<br>
+                        <strong>SERVICE_BUS_NAMESPACE:</strong> Azure Service Bus integration<br>
+                        <strong>EVENT_GRID_TOPIC:</strong> Event-driven architecture
+                    </div>
+                </div>
+                
+                <div class="component">
+                    <div class="component-title">Configuration Validation (/config/arm-template-status)</div>
+                    <div class="component-details">
+                        <strong>Validation Categories:</strong> Agent, Service Bus, Event Grid, Security, Multi-Bottler<br>
+                        <strong>Status Levels:</strong> ✅ SUCCESS, ⚠️ WARNINGS, ❌ ERRORS<br>
+                        <strong>Compliance Check:</strong> ARM template alignment verification<br>
+                        <strong>Deployment Ready:</strong> Infrastructure readiness assessment
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Legend -->
+        <div class="legend">
+            <h3>🎯 Component Legend</h3>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(45deg, #34495e, #2c3e50);"></div>
+                <span>Enterprise Modules - Core enterprise integration modules</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(45deg, #3498db, #2980b9);"></div>
+                <span>Framework Integration - MCP, Semantic Kernel, AutoGen</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(45deg, #7f8c8d, #95a5a6);"></div>
+                <span>Core Components - Agent management, health, orchestration</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(45deg, #95a5a6, #7f8c8d);"></div>
+                <span>API Endpoints - HTTP endpoints for interaction</span>
+            </div>
+            
+            <h3 style="margin-top: 25px;">🔄 Framework Communication Patterns</h3>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #e74c3c;"></div>
+                <span><strong>Security Validation</strong> - Validates ALL framework communications</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #9b59b6;"></div>
+                <span><strong>MCP → SK</strong> - Orchestration requests planning from Semantic Kernel</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #3498db;"></div>
+                <span><strong>SK → AutoGen</strong> - Planning results passed to multi-agent execution</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #27ae60;"></div>
+                <span><strong>AutoGen → AI Foundry</strong> - Agents use AI models for execution</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #f39c12;"></div>
+                <span><strong>SK → AI Foundry</strong> - Planning uses AI models for analysis</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #34495e;"></div>
+                <span><strong>All → CosmosDB</strong> - All frameworks persist data and audit logs</span>
+            </div>
+            
+            <div style="margin-top: 20px; padding: 15px; background: rgba(52, 73, 94, 0.1); border-radius: 8px; border: 2px solid #34495e;">
+                <strong>🔧 CRITICAL Framework Integration:</strong> This system completely integrates configuration files from /config/ 
+                including MCP tools, AutoGen A2A, and agent configurations. Framework communication follows the pattern:
+                <br><br>
+                <code style="background: rgba(52, 73, 94, 0.1); color: #2c3e50; padding: 4px 8px; border-radius: 4px;">Security → MCP → SK Planning → AutoGen Execution → AI Models → Data Persistence</code>
+                <br><br>
+                All frameworks are coordinated through the central Hub Orchestrator maintaining strict anti-trust compliance.
+            </div>
+        </div>
+    </div>
+</body>
+</html>
